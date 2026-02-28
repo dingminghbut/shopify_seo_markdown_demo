@@ -23,10 +23,10 @@ function isValidUrl(url) {
 }
 
 /**
- * POST /api/analyze
+ * POST /analyze
  * Analyzes a given URL for speed, SEO, and CRO metrics
  */
-router.post('/api/analyze', async (req, res) => {
+router.post('/analyze', async (req, res) => {
   const { url } = req.body;
 
   // Validate URL format
@@ -44,40 +44,57 @@ router.post('/api/analyze', async (req, res) => {
     // Step 2: Load HTML with cheerio
     const $ = cheerio.load(html);
 
-    // Step 3: Run all analyzers in parallel
-    const [speedAnalysis, seoAnalysis, croAnalysis] = await Promise.all([
-      speedAnalyzer.analyze(url, html, headers, $),
-      seoAnalyzer.analyze(url, html, headers, $),
-      croAnalyzer.analyze(url, html, headers, $)
-    ]);
+    // Step 3: Run all analyzers (matching their actual signatures)
+    const speedAnalysis = speedAnalyzer.analyze(html, $, headers);
+    const seoAnalysis = seoAnalyzer.analyze(html, $);
+    const croAnalysis = croAnalyzer.analyze(html, $);
 
-    // Step 4: Generate the markdown report
-    const report = await reportGenerator.generate({
+    // Step 4: Generate timestamp
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    // Step 5: Generate the markdown report
+    const report = reportGenerator.generate(
+      speedAnalysis,
+      seoAnalysis.results,
+      croAnalysis.results,
       url,
-      speed: speedAnalysis,
-      seo: seoAnalysis,
-      cro: croAnalysis
-    });
+      timestamp
+    );
 
-    // Step 5: Return success response
+    // Step 6: Return success response
     return res.status(200).json({
       success: true,
       report
     });
 
   } catch (error) {
-    // Handle timeout errors
-    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+    // Handle specific error codes from fetcher
+    if (error === 'INVALID_URL') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid URL format'
+      });
+    }
+
+    if (error === 'TIMEOUT') {
       return res.status(504).json({
         success: false,
         error: 'Request timeout'
       });
     }
 
-    // Handle fetch failures (network errors, invalid URL response, etc.)
-    return res.status(502).json({
+    if (error === 'FETCH_ERROR') {
+      return res.status(502).json({
+        success: false,
+        error: 'Failed to fetch page'
+      });
+    }
+
+    // Handle other errors
+    console.error('Analysis error:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Failed to fetch page'
+      error: 'Internal server error'
     });
   }
 });

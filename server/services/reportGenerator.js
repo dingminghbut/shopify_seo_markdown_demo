@@ -4,6 +4,73 @@
  */
 
 /**
+ * Calculate speed score (max 25 points)
+ * @param {Object} speedResults - Speed analysis results
+ * @returns {number} Score out of 25
+ */
+function calculateSpeedScore(speedResults) {
+  let score = 0;
+  
+  const htmlSize = speedResults?.htmlSize || 0;
+  if (htmlSize < 100) score += 10;
+  else if (htmlSize < 200) score += 5;
+  
+  const imgCount = speedResults?.imageCount || 0;
+  if (imgCount < 10) score += 5;
+  
+  const cssJsCount = (speedResults?.cssCount || 0) + (speedResults?.jsCount || 0);
+  if (cssJsCount < 10) score += 5;
+  
+  if (speedResults?.gzipEnabled) score += 5;
+  
+  return score;
+}
+
+/**
+ * Calculate SEO score (max 50 points)
+ * @param {Object} seoResults - SEO analysis results
+ * @returns {number} Score out of 50
+ */
+function calculateSeoScore(seoResults) {
+  let score = 0;
+  
+  if (seoResults?.titleStatus === 'pass') score += 10;
+  else if (seoResults?.titleStatus === 'warning') score += 5;
+  
+  if (seoResults?.metaDescStatus === 'pass') score += 10;
+  else if (seoResults?.metaDescStatus === 'warning') score += 5;
+  
+  if (seoResults?.h1Status === 'pass') score += 10;
+  else if (seoResults?.h1Status === 'warning') score += 5;
+  
+  if (seoResults?.altStatus === 'pass') score += 10;
+  else if (seoResults?.altStatus === 'warning') score += 5;
+  
+  if (seoResults?.ogStatus === 'pass') score += 5;
+  else if (seoResults?.ogStatus === 'warning') score += 2;
+  
+  if (seoResults?.canonicalStatus === 'pass') score += 5;
+  
+  return score;
+}
+
+/**
+ * Calculate CRO score (max 25 points)
+ * @param {Object} croResults - CRO analysis results
+ * @returns {number} Score out of 25
+ */
+function calculateCroScore(croResults) {
+  let score = 0;
+  
+  if (croResults?.ctaFound) score += 10;
+  if (croResults?.viewportMeta) score += 5;
+  if (croResults?.hasForms) score += 5;
+  if (croResults?.hasPhone || croResults?.hasEmail) score += 5;
+  
+  return score;
+}
+
+/**
  * Generate a comprehensive Markdown report from analysis results
  * @param {Object} speedResults - Speed analysis results
  * @param {Object} seoResults - SEO analysis results
@@ -23,239 +90,94 @@ function generate(speedResults, seoResults, croResults, url, timestamp) {
   let md = '';
 
   // Header
-  md += `# Website Analysis Report\n\n`;
-  md += `**Detection Time:** ${timestamp}\n\n`;
-  md += `**Target URL:** ${url}\n\n`;
+  md += `# 🏥 Shopify 店铺健康检测报告\n\n`;
+  md += `**检测时间**：${timestamp}\n\n`;
+  md += `**目标 URL**：${url}\n\n`;
   md += `---\n\n`;
 
   // Speed Section
-  md += `## 🚀 Speed Analysis (${speedScore}/25)\n\n`;
-  md += `| Check Item | Status | Details |\n`;
-  md += `|------------|--------|---------|\n`;
+  md += `## ⚡ 页面速度 (${speedScore}/25)\n\n`;
+  md += `| 指标 | 结果 | 建议 |\n`;
+  md += `|-----|------|-----|\n`;
   
   const htmlSize = speedResults?.htmlSize || 0;
   const htmlStatus = htmlSize < 100 ? '✅' : htmlSize < 200 ? '⚠️' : '❌';
-  const htmlDetails = htmlSize < 100 ? `< 100KB (+10)` : htmlSize < 200 ? `< 200KB (+5)` : `> 200KB (+0)`;
-  md += `| HTML Size | ${htmlStatus} | ${htmlDetails} |\n`;
+  const htmlAdvice = htmlSize < 100 ? '正常' : htmlSize < 200 ? '偏大，建议压缩' : '过大，需要优化';
+  md += `| HTML 大小 | ${htmlStatus} ${htmlSize} KB | ${htmlAdvice} |\n`;
   
   const imgCount = speedResults?.imageCount || 0;
   const imgStatus = imgCount < 10 ? '✅' : '⚠️';
-  const imgDetails = imgCount < 10 ? `${imgCount} images (+5)` : `${imgCount} images (+0)`;
-  md += `| Image Count | ${imgStatus} | ${imgDetails} |\n`;
+  const imgAdvice = imgCount < 10 ? '正常' : '图片较多，建议优化';
+  md += `| 图片数量 | ${imgStatus} ${imgCount} 张 | ${imgAdvice} |\n`;
   
-  const cssJsCount = (speedResults?.cssCount || 0) + (speedResults?.jsCount || 0);
+  const cssCount = speedResults?.cssCount || 0;
+  const jsCount = speedResults?.jsCount || 0;
+  const cssJsCount = cssCount + jsCount;
   const cssJsStatus = cssJsCount < 10 ? '✅' : '⚠️';
-  const cssJsDetails = cssJsCount < 10 ? `${cssJsCount} files (+5)` : `${cssJsCount} files (+0)`;
-  md += `| CSS+JS Files | ${cssJsStatus} | ${cssJsDetails} |\n`;
+  const cssJsAdvice = cssJsCount < 10 ? '正常' : '建议合并';
+  md += `| 外部脚本 | ${cssJsStatus} CSS: ${cssCount}, JS: ${jsCount} | ${cssJsAdvice} |\n`;
   
   const gzipEnabled = speedResults?.gzipEnabled || false;
   const gzipStatus = gzipEnabled ? '✅' : '❌';
-  const gzipDetails = gzipEnabled ? `Enabled (+5)` : `Not enabled (+0)`;
-  md += `| Gzip Compression | ${gzipStatus} | ${gzipDetails} |\n\n`;
+  const gzipAdvice = gzipEnabled ? '已启用' : '建议启用 Gzip 压缩';
+  md += `| Gzip 压缩 | ${gzipStatus} | ${gzipAdvice} |\n\n`;
 
   // SEO Section
-  md += `## 🔍 SEO Analysis (${seoScore}/50)\n\n`;
-  md += `| Check Item | Status | Details |\n`;
-  md += `|------------|--------|---------|\n`;
+  md += `## 🔍 SEO 状况 (${seoScore}/50)\n\n`;
+  md += `| 检测项 | 状态 | 详情 |\n`;
+  md += `|-------|------|-----|\n`;
   
-  const titleExists = seoResults?.title?.exists || false;
-  const titleStatus = titleExists ? '✅' : '❌';
-  const titleDetails = titleExists ? `Found: "${seoResults.title.text.substring(0, 30)}..." (+10)` : `Missing (+0)`;
-  md += `| Title Tag | ${titleStatus} | ${titleDetails} |\n`;
+  const titleStatus = seoResults?.titleStatus === 'pass' ? '✅' : seoResults?.titleStatus === 'warning' ? '⚠️' : '❌';
+  const titleText = seoResults?.title ? `"${seoResults.title.substring(0, 40)}${seoResults.title.length > 40 ? '...' : ''}" (${seoResults.titleLength}字符)` : '未设置';
+  md += `| Title | ${titleStatus} | ${titleText} |\n`;
   
-  const titleLength = seoResults?.title?.length || 0;
-  const titleLenStatus = titleLength >= 30 && titleLength <= 60 ? '✅' : '⚠️';
-  const titleLenDetails = titleLength >= 30 && titleLength <= 60 ? `${titleLength} chars (+5)` : `${titleLength} chars (+0)`;
-  md += `| Title Length | ${titleLenStatus} | ${titleLenDetails} |\n`;
+  const metaStatus = seoResults?.metaDescStatus === 'pass' ? '✅' : seoResults?.metaDescStatus === 'warning' ? '⚠️' : '❌';
+  const metaText = seoResults?.metaDescription ? `已设置 (${seoResults.metaDescLength}字符)` : '未设置';
+  md += `| Meta Description | ${metaStatus} | ${metaText} |\n`;
   
-  const descExists = seoResults?.description?.exists || false;
-  const descStatus = descExists ? '✅' : '❌';
-  const descDetails = descExists ? `Found: "${seoResults.description.text.substring(0, 30)}..." (+10)` : `Missing (+0)`;
-  md += `| Meta Description | ${descStatus} | ${descDetails} |\n`;
+  const h1Status = seoResults?.h1Status === 'pass' ? '✅' : seoResults?.h1Status === 'warning' ? '⚠️' : '❌';
+  const h1Text = `${seoResults?.h1Count || 0} 个`;
+  md += `| H1 标签 | ${h1Status} | ${h1Text} |\n`;
   
-  const descLength = seoResults?.description?.length || 0;
-  const descLenStatus = descLength >= 50 && descLength <= 160 ? '✅' : '⚠️';
-  const descLenDetails = descLength >= 50 && descLength <= 160 ? `${descLength} chars (+5)` : `${descLength} chars (+0)`;
-  md += `| Description Length | ${descLenStatus} | ${descLenDetails} |\n`;
+  const altStatus = seoResults?.altStatus === 'pass' ? '✅' : seoResults?.altStatus === 'warning' ? '⚠️' : '❌';
+  const altText = `覆盖率 ${seoResults?.altCoverage || 0}%`;
+  md += `| 图片 Alt | ${altStatus} | ${altText} |\n`;
   
-  const h1Count = seoResults?.h1Count || 0;
-  const h1Status = h1Count >= 1 ? '✅' : '❌';
-  const h1Details = h1Count >= 1 ? `${h1Count} H1 tag(s) (+10)` : `No H1 found (+0)`;
-  md += `| H1 Tag | ${h1Status} | ${h1Details} |\n`;
-  
-  const altCoverage = seoResults?.altCoverage || 0;
-  const altStatus = altCoverage > 80 ? '✅' : altCoverage > 0 ? '⚠️' : '❌';
-  const altDetails = altCoverage > 80 ? `${altCoverage}% (+10)` : `${altCoverage}% (+0)`;
-  md += `| Image Alt Coverage | ${altStatus} | ${altDetails} |\n`;
-  
+  const ogStatus = seoResults?.ogStatus === 'pass' ? '✅' : seoResults?.ogStatus === 'warning' ? '⚠️' : '❌';
   const ogTags = seoResults?.ogTags || {};
-  const ogComplete = ogTags.ogTitle && ogTags.ogDescription && ogTags.ogImage;
-  const ogStatus = ogComplete ? '✅' : '❌';
-  const ogDetails = ogComplete ? `Title, Description, Image (+5)` : `Missing tags (+0)`;
-  md += `| Open Graph Tags | ${ogStatus} | ${ogDetails} |\n\n`;
+  const ogText = ogTags.title || ogTags.image ? '已配置' : '未配置';
+  md += `| Open Graph | ${ogStatus} | ${ogText} |\n`;
+  
+  const canonicalStatus = seoResults?.canonicalStatus === 'pass' ? '✅' : '⚠️';
+  const canonicalText = seoResults?.canonicalUrl ? '已设置' : '未设置';
+  md += `| Canonical URL | ${canonicalStatus} | ${canonicalText} |\n\n`;
 
   // CRO Section
-  md += `## 💰 Conversion Rate Optimization (${croScore}/25)\n\n`;
-  md += `| Check Item | Status | Details |\n`;
-  md += `|------------|--------|---------|\n`;
+  md += `## 🎯 转化率优化 (${croScore}/25)\n\n`;
+  md += `| 检测项 | 状态 |\n`;
+  md += `|-------|------|\n`;
   
-  const ctaExists = croResults?.ctaExists || false;
-  const ctaStatus = ctaExists ? '✅' : '❌';
-  const ctaDetails = ctaExists ? `Found (+10)` : `Not found (+0)`;
-  md += `| Call-to-Action | ${ctaStatus} | ${ctaDetails} |\n`;
+  const ctaStatus = croResults?.ctaFound ? '✅' : '❌';
+  const ctaText = croResults?.ctaFound ? `发现 "${croResults.ctaKeywords?.join(', ') || 'CTA'}"` : '未发现 CTA 按钮';
+  md += `| CTA 按钮 | ${ctaStatus} ${ctaText} |\n`;
   
-  const viewport = croResults?.viewport || false;
-  const viewportStatus = viewport ? '✅' : '❌';
-  const viewportDetails = viewport ? `Defined (+5)` : `Missing (+0)`;
-  md += `| Viewport Meta | ${viewportStatus} | ${viewportDetails} |\n`;
+  const viewportStatus = croResults?.viewportMeta ? '✅' : '❌';
+  const viewportText = croResults?.viewportMeta ? 'viewport 已设置' : 'viewport 未设置';
+  md += `| 移动端适配 | ${viewportStatus} ${viewportText} |\n`;
   
-  const forms = croResults?.forms || 0;
-  const formsStatus = forms > 0 ? '✅' : '❌';
-  const formsDetails = forms > 0 ? `${forms} form(s) found (+5)` : `No forms (+0)`;
-  md += `| Contact Forms | ${formsStatus} | ${formsDetails} |\n`;
+  const formStatus = croResults?.hasForms ? '✅' : '⚠️';
+  const formText = croResults?.hasForms ? '发现表单/订阅入口' : '未发现表单';
+  md += `| 订阅入口 | ${formStatus} ${formText} |\n`;
   
-  const contactInfo = croResults?.contactInfo || false;
-  const contactStatus = contactInfo ? '✅' : '❌';
-  const contactDetails = contactInfo ? `Found (+5)` : `Not found (+0)`;
-  md += `| Contact Information | ${contactStatus} | ${contactDetails} |\n\n`;
+  const contactStatus = (croResults?.hasPhone || croResults?.hasEmail) ? '✅' : '⚠️';
+  const contactText = croResults?.hasPhone ? '有电话链接' : croResults?.hasEmail ? '有邮件链接' : '无联系方式';
+  md += `| 联系方式 | ${contactStatus} ${contactText} |\n\n`;
 
-  // Footer - Total Score
+  // Summary
   md += `---\n\n`;
-  md += `## 📊 Overall Score: ${totalScore}/100\n\n`;
-  
-  // Score breakdown visualization
-  const speedPercent = (speedScore / 25) * 100;
-  const seoPercent = (seoScore / 50) * 100;
-  const croPercent = (croScore / 25) * 100;
-  
-  md += `| Category | Score | Percentage |\n`;
-  md += `|----------|-------|------------|\n`;
-  md += `| Speed | ${speedScore}/25 | ${speedPercent}% |\n`;
-  md += `| SEO | ${seoScore}/50 | ${seoPercent}% |\n`;
-  md += `| CRO | ${croScore}/25 | ${croPercent}% |\n`;
-  md += `| **Total** | **${totalScore}/100** | **${totalScore}%** |\n`;
+  md += `## 📊 综合评分：${totalScore}/100\n`;
 
   return md;
 }
 
-/**
- * Calculate speed analysis score
- * @param {Object} speedResults - Speed analysis results
- * @returns {number} Score out of 25
- */
-function calculateSpeedScore(speedResults) {
-  let score = 0;
-
-  // HTML size scoring
-  const htmlSize = speedResults?.htmlSize || 0;
-  if (htmlSize < 100) {
-    score += 10;
-  } else if (htmlSize < 200) {
-    score += 5;
-  }
-
-  // Image count scoring
-  const imageCount = speedResults?.imageCount || 0;
-  if (imageCount < 10) {
-    score += 5;
-  }
-
-  // CSS+JS count scoring
-  const cssCount = speedResults?.cssCount || 0;
-  const jsCount = speedResults?.jsCount || 0;
-  if (cssCount + jsCount < 10) {
-    score += 5;
-  }
-
-  // Gzip compression scoring
-  if (speedResults?.gzipEnabled) {
-    score += 5;
-  }
-
-  return score;
-}
-
-/**
- * Calculate SEO analysis score
- * @param {Object} seoResults - SEO analysis results
- * @returns {number} Score out of 50
- */
-function calculateSeoScore(seoResults) {
-  let score = 0;
-
-  // Title exists
-  if (seoResults?.title?.exists) {
-    score += 10;
-  }
-
-  // Title length appropriate (30-60 chars)
-  const titleLength = seoResults?.title?.length || 0;
-  if (titleLength >= 30 && titleLength <= 60) {
-    score += 5;
-  }
-
-  // Description exists
-  if (seoResults?.description?.exists) {
-    score += 10;
-  }
-
-  // Description length appropriate (50-160 chars)
-  const descLength = seoResults?.description?.length || 0;
-  if (descLength >= 50 && descLength <= 160) {
-    score += 5;
-  }
-
-  // H1 tag exists
-  if ((seoResults?.h1Count || 0) >= 1) {
-    score += 10;
-  }
-
-  // Alt coverage > 80%
-  const altCoverage = seoResults?.altCoverage || 0;
-  if (altCoverage > 80) {
-    score += 10;
-  }
-
-  // OG tags complete (ogTitle, ogDescription, ogImage)
-  const ogTags = seoResults?.ogTags || {};
-  if (ogTags.ogTitle && ogTags.ogDescription && ogTags.ogImage) {
-    score += 5;
-  }
-
-  return score;
-}
-
-/**
- * Calculate CRO analysis score
- * @param {Object} croResults - CRO analysis results
- * @returns {number} Score out of 25
- */
-function calculateCroScore(croResults) {
-  let score = 0;
-
-  // CTA exists
-  if (croResults?.ctaExists) {
-    score += 10;
-  }
-
-  // Viewport meta tag
-  if (croResults?.viewport) {
-    score += 5;
-  }
-
-  // Forms present
-  if ((croResults?.forms || 0) > 0) {
-    score += 5;
-  }
-
-  // Contact information
-  if (croResults?.contactInfo) {
-    score += 5;
-  }
-
-  return score;
-}
-
-module.exports = {
-  generate
-};
+module.exports = { generate };

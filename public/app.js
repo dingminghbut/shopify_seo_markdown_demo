@@ -8,7 +8,12 @@ const urlInput = document.getElementById('url-input');
 const analyzeBtn = document.getElementById('analyze-btn');
 const loading = document.getElementById('loading');
 const report = document.getElementById('report');
+const reportContent = document.getElementById('report-content');
 const downloadBtn = document.getElementById('download-btn');
+const errorMessage = document.getElementById('error-message');
+
+// 存储原始 Markdown 内容
+let markdownContent = '';
 
 /**
  * URL 格式校验函数
@@ -19,20 +24,24 @@ const downloadBtn = document.getElementById('download-btn');
 function validateUrl(url) {
     // 验证 HTTP/HTTPS URL 格式的正则表达式
     const urlPattern = /^https?:\/\/([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(\/.*)?$/i;
-    if (!urlPattern.test(url)) {
-        return false;
-    }
-    return true;
+    return urlPattern.test(url);
 }
 
 /**
- * 显示错误消息到 #report 区域
+ * 显示错误消息
  * @param {string} message - 错误信息
  */
 function showError(message) {
-    report.innerHTML = `<div style="color: #e74c3c; padding: 20px; text-align: center;">${message}</div>`;
-    report.style.display = 'block';
-    downloadBtn.style.display = 'none';
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+    report.style.display = 'none';
+}
+
+/**
+ * 隐藏错误消息
+ */
+function hideError() {
+    errorMessage.style.display = 'none';
 }
 
 /**
@@ -42,6 +51,8 @@ function showLoading() {
     loading.style.display = 'block';
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = '检测中...';
+    report.style.display = 'none';
+    hideError();
 }
 
 /**
@@ -58,29 +69,30 @@ function hideLoading() {
  * @param {string} markdownText - Markdown 格式的报告内容
  */
 function renderReport(markdownText) {
+    // 保存原始 Markdown 内容用于下载
+    markdownContent = markdownText;
     // 使用 marked.parse 将 Markdown 转换为 HTML
     const htmlContent = marked.parse(markdownText);
-    report.innerHTML = htmlContent;
-    // 保存原始 Markdown 内容用于下载
-    report.dataset.markdown = markdownText;
+    reportContent.innerHTML = htmlContent;
     report.style.display = 'block';
     downloadBtn.style.display = 'inline-block';
 }
 
 /**
  * 下载报告为 Markdown 文件
- * @param {string} content - Markdown 内容
  */
-function downloadReport(content) {
+function downloadReport() {
+    if (!markdownContent) return;
+    
     // 创建 Blob 对象，类型为 text/markdown
-    const blob = new Blob([content], { type: 'text/markdown' });
+    const blob = new Blob([markdownContent], { type: 'text/markdown' });
     // 创建下载链接
     const url = URL.createObjectURL(blob);
     
     // 创建临时链接元素并触发下载
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'analysis-report.md';
+    link.download = 'shopify-health-report.md';
     document.body.appendChild(link);
     link.click();
     
@@ -106,9 +118,6 @@ async function analyzeUrl() {
         return;
     }
 
-    // 隐藏之前的报告
-    report.style.display = 'none';
-
     // 显示加载动画
     showLoading();
 
@@ -125,46 +134,33 @@ async function analyzeUrl() {
         // 隐藏加载动画
         hideLoading();
 
-        // 检查响应状态：API 返回非 200 状态码时，显示错误信息到 #report 区域
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `请求失败，状态码: ${response.status}`);
-        }
-
-        // 解析响应数据
         const data = await response.json();
+
+        // 检查响应状态
+        if (!response.ok || !data.success) {
+            showError(data.error || '分析失败，请稍后重试');
+            return;
+        }
 
         // 渲染报告
         renderReport(data.report);
 
     } catch (error) {
-        // 隐藏加载动画
         hideLoading();
-
-        // 显示错误信息到 #report 区域
-        if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-            showError('网络错误，请检查网络连接或服务器是否正常运行');
-        } else {
-            showError(error.message || '分析过程中发生未知错误');
-        }
+        showError('网络错误，请检查网络连接后重试');
+        console.error('Analysis error:', error);
     }
 }
 
-// 事件监听: analyzeBtn click 触发检测流程
+// 事件绑定
 analyzeBtn.addEventListener('click', analyzeUrl);
 
-// 支持回车键触发分析
-urlInput.addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
+// 回车键触发分析
+urlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
         analyzeUrl();
     }
 });
 
-// 下载功能事件监听
-downloadBtn.addEventListener('click', function() {
-    // 获取报告的 Markdown 源码
-    const markdownContent = report.dataset.markdown || report.textContent;
-    if (markdownContent) {
-        downloadReport(markdownContent);
-    }
-});
+// 下载按钮事件
+downloadBtn.addEventListener('click', downloadReport);

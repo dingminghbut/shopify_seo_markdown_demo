@@ -19,16 +19,13 @@ body {
     margin: 0 auto;
 }
 
-.card {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    margin-bottom: 20px;
+header {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
 h1 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 600;
     margin-bottom: 8px;
     color: #202223;
@@ -36,16 +33,23 @@ h1 {
 
 .subtitle {
     color: #6d7175;
-    margin-bottom: 24px;
     font-size: 0.95rem;
 }
 
-.form-group {
-    margin-bottom: 16px;
+.input-section {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 #url-input {
-    width: 100%;
+    flex: 1;
+    min-width: 200px;
     padding: 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -73,7 +77,7 @@ h1 {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
-    width: 100%;
+    white-space: nowrap;
 }
 
 #analyze-btn:hover:not(:disabled) {
@@ -93,6 +97,10 @@ h1 {
     display: none;
     text-align: center;
     padding: 40px 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
 }
 
 .spinner {
@@ -110,15 +118,26 @@ h1 {
     100% { transform: rotate(360deg); }
 }
 
-#loading p {
+.loading-text {
     color: #6d7175;
     font-size: 0.95rem;
+}
+
+#error-message {
+    display: none;
+    color: #d82c0d;
+    background: #fef2f2;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+    border-left: 3px solid #d82c0d;
 }
 
 #report {
     display: none;
     background: #fff;
-    padding: 20px;
+    padding: 24px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
@@ -129,26 +148,62 @@ h1 {
     font-weight: 600;
     margin-bottom: 16px;
     color: #202223;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
-#error-message {
-    display: none;
-    color: #d82c0d;
-    background: #fee;
-    padding: 10px 14px;
-    border-radius: 4px;
+#report-content {
+    line-height: 1.8;
+}
+
+#report-content h1 {
+    font-size: 1.5rem;
     margin-bottom: 16px;
-    font-size: 0.95rem;
-    border-left: 3px solid #d82c0d;
+    color: #202223;
 }
 
-.actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
+#report-content h2 {
+    font-size: 1.2rem;
+    margin: 24px 0 12px;
+    color: #333;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+#report-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+}
+
+#report-content th,
+#report-content td {
+    border: 1px solid #e5e5e5;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+#report-content th {
+    background-color: #f9fafb;
+    font-weight: 600;
+}
+
+#report-content tr:hover {
+    background-color: #f9fafb;
+}
+
+#report-content hr {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 20px 0;
+}
+
+#report-content p {
+    margin: 8px 0;
 }
 
 #download-btn {
+    display: none;
     background-color: #333;
     color: #fff;
     border: none;
@@ -158,6 +213,7 @@ h1 {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;
+    margin-top: 16px;
 }
 
 #download-btn:hover:not(:disabled) {
@@ -170,40 +226,25 @@ h1 {
 }
 
 /* Responsive design */
-@media (min-width: 640px) {
+@media (max-width: 600px) {
+    .input-section {
+        flex-direction: column;
+    }
+    
     #analyze-btn {
-        width: auto;
-    }
-    
-    .card {
-        padding: 32px;
-    }
-    
-    h1 {
-        font-size: 1.75rem;
-    }
-}
-
-@media (max-width: 480px) {
-    body {
-        padding: 12px;
-    }
-    
-    .card {
-        padding: 16px;
-    }
-    
-    #url-input {
-        padding: 10px;
-    }
-    
-    #analyze-btn,
-    #download-btn {
-        padding: 10px 20px;
-        font-size: 15px;
+        width: 100%;
     }
     
     #report {
         padding: 16px;
+    }
+    
+    #report-content table {
+        font-size: 14px;
+    }
+    
+    #report-content th,
+    #report-content td {
+        padding: 8px;
     }
 }
