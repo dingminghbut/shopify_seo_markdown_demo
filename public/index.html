@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站安全检测工具</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://unpkg.com/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>网站安全检测工具</h1>
+            <p class="subtitle">输入URL进行安全分析</p>
+        </header>
+        
+        <div class="input-section">
+            <input 
+                type="url" 
+                id="url-input" 
+                placeholder="请输入要检测的网站URL (例如: https://example.com)"
+                required
+            >
+            <button id="analyze-btn">开始检测</button>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">正在分析中，请稍候...</p>
+        </div>
+        
+        <div id="error-message" class="error-message"></div>
+        
+        <div id="report" class="report">
+            <h2>检测报告</h2>
+            <div id="report-content"></div>
+            <button id="download-btn">下载报告</button>
+        </div>
+    </div>
+    
+    <script src="/app.js"></script>
+</body>
+</html>
